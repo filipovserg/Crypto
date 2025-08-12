@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-from telegram import Bot
+import requests  # 🔄 замість telegram
 
 DB_PATH = "crypto_data.db"
 SERVICE_ACCOUNT_FILE = "service_account.json"
@@ -38,19 +38,26 @@ def get_signals():
     data = sheet.get_all_records()
     return pd.DataFrame(data)
 
-# Telegram Log
+# Telegram Log via requests
 def send_test_telegram_message():
-    bot = Bot(token=TELEGRAM_TOKEN)
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     msg = f"🔔 Ручний запуск перевірки: {now}"
-    bot.send_message(chat_id=CHAT_ID, text=msg)
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": msg}
+    try:
+        response = requests.post(url, data=payload)
+        if response.status_code == 200:
+            st.success("✅ Повідомлення надіслано!")
+        else:
+            st.error(f"❌ Telegram Error: {response.text}")
+    except Exception as e:
+        st.error(f"❌ Запит не вдалось відправити: {e}")
 
 symbols = ["SOL", "ETH", "XRP"]
 selected_symbol = st.sidebar.selectbox("Вибери монету", symbols)
 
 if st.sidebar.button("🔁 Ручний запуск перевірки"):
     send_test_telegram_message()
-    st.success("Запит відправлено в Telegram")
 
 df = get_combined_data(selected_symbol)
 
