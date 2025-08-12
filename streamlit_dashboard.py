@@ -75,12 +75,7 @@ def send_signal_to_telegram(signal):
 
 
 def check_smc_conditions(df):
-st.write("RSI:", rsi)
-st.write("Whale Volume:", volume)
-st.write("AVG Whale Volume:", avg_volume)
-st.write("Price:", price)
-st.write("Support Break:", support_break)
-st.write("Resistance Break:", resistance_break)
+
     
     if len(df) < 20:
         return None
