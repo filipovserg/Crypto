@@ -6,9 +6,9 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import requests  # 🔄 замість telegram
+import json
 
 DB_PATH = "crypto_data.db"
-SERVICE_ACCOUNT_FILE = "service_account.json"
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1E7ohaRHZfNvHHM9pFrQUW0W_T0ESTmoH6BL1SGG2Kds/edit"
 SHEET_NAME = "SMC Signals"
 TELEGRAM_TOKEN = "8220944553:AAE8cJhbGdLk95Uo7uHfJFfRXmQZRK5Vuo8"
@@ -32,7 +32,8 @@ def get_combined_data(symbol):
 # Google Sheets Access
 def get_signals():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(SERVICE_ACCOUNT_FILE, scope)
+    creds_dict = st.secrets["gcp_service_account"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(json.dumps(creds_dict)), scope)
     client = gspread.authorize(creds)
     sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet(SHEET_NAME)
     data = sheet.get_all_records()
