@@ -40,18 +40,19 @@ def get_combined_data(symbol):
 def get_signals():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds_raw = st.secrets["gcp_service_account"]
-    
-    # 🔥 Fix ключа
+
+    # 🛠️ Розкодувати \n у справжні переводи рядків
     if "\\n" in creds_raw["private_key"]:
         creds_raw["private_key"] = creds_raw["private_key"].replace("\\n", "\n")
 
     creds_dict = json.loads(json.dumps({k: v for k, v in creds_raw.items()}))
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    
+
     client = gspread.authorize(creds)
     sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet(SHEET_NAME)
     data = sheet.get_all_records()
     return pd.DataFrame(data)
+
 
 
 # Telegram Log via requests
