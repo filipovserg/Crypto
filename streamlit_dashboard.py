@@ -30,11 +30,22 @@ def get_combined_data(symbol):
 
 # Тестова кнопка для вставки даних
 if st.sidebar.button("🧪 Додати тестові дані SOL"):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO indicators (timestamp, symbol, rsi) VALUES ('2025-08-12 13:00:00', 'SOL', 25)")
-    cursor.execute("INSERT INTO whales (timestamp, symbol, total_volume) VALUES ('2025-08-12 13:00:00', 'SOL', 500000)")
-    cursor.execute("INSERT INTO prices (timestamp, symbol, close) VALUES ('2025-08-12 13:00:00', 'SOL', 160)")
-    conn.commit()
-    conn.close()
-    st.success("✅ Тестові дані додано в базу!")
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # уникаємо дубля timestamp
+        # Використовуємо INSERT OR IGNORE, щоб не падати на унікальних ключах
+        cursor.execute("INSERT OR IGNORE INTO indicators (timestamp, symbol, rsi) VALUES (?, ?, ?)", (ts, 'SOL', 25))
+        cursor.execute("INSERT OR IGNORE INTO whales (timestamp, symbol, total_volume) VALUES (?, ?, ?)", (ts, 'SOL', 500000))
+        cursor.execute("INSERT OR IGNORE INTO prices (timestamp, symbol, close) VALUES (?, ?, ?)", (ts, 'SOL', 160))
+        conn.commit()
+        st.success(f"✅ Тестові дані додано в базу! timestamp={ts}")
+    except sqlite3.IntegrityError as e:
+        st.warning("⚠️ Дані з таким (timestamp, symbol) вже існують. Додаю з новим timestamp.")
+    except Exception as e:
+        st.error(f"❌ Помилка вставки: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
