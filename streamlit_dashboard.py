@@ -113,7 +113,7 @@ def check_smc_conditions(df):
     return None
 
 
-symbols = ["SOL", "ETH", "XRP", "RNDR"]
+symbols = ["SOL", "ETH", "XRP", "BTC", "GRT", "RENDER", "ICP", "SUI", "APT", "INJ"]
 selected_symbol = st.sidebar.selectbox("Вибери монету", symbols)
 
 if st.sidebar.button("🔁 Ручний запуск перевірки"):
