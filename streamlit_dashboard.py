@@ -96,7 +96,7 @@ def check_for_smc_conditions(df, symbol):
 
 symbols = ["SOL", "ETH", "XRP", "RNDR"]
 selected_symbol = st.sidebar.selectbox("Вибери монету", symbols)
-
+st.write("Private key snippet:", creds_dict["private_key"][:30])
 if st.sidebar.button("🔁 Ручний запуск перевірки"):
     df = get_combined_data(selected_symbol)
     auto_signal = check_for_smc_conditions(df, selected_symbol)
