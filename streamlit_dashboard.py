@@ -115,7 +115,7 @@ def check_smc_conditions(df):
 
 symbols = ["SOL", "ETH", "XRP", "BTC", "GRT", "RENDER", "ICP", "SUI", "APT", "INJ"]
 selected_symbol = st.sidebar.selectbox("Вибери монету", symbols)
--- вставка тестових даних (приклад для монети SOL)
+
 INSERT INTO indicators (timestamp, symbol, rsi) VALUES ('2025-08-12 13:00:00', 'SOL', 25);
 INSERT INTO whales (timestamp, symbol, total_volume) VALUES ('2025-08-12 13:00:00', 'SOL', 500000);
 INSERT INTO prices (timestamp, symbol, close) VALUES ('2025-08-12 13:00:00', 'SOL', 160);
