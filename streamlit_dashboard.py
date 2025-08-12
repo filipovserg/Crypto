@@ -75,6 +75,13 @@ def send_signal_to_telegram(signal):
 
 
 def check_smc_conditions(df):
+st.write("RSI:", rsi)
+st.write("Whale Volume:", volume)
+st.write("AVG Whale Volume:", avg_volume)
+st.write("Price:", price)
+st.write("Support Break:", support_break)
+st.write("Resistance Break:", resistance_break)
+    
     if len(df) < 20:
         return None
 
@@ -132,6 +139,15 @@ INSERT INTO prices (timestamp, symbol, close) VALUES ('2025-08-12 13:00:00', 'SO
             st.warning("⚠️ Сигнал збережено, але Telegram не спрацював")
     else:
         st.info("ℹ️ Умови SMC не виконані — сигнал не сформовано")
+if st.sidebar.button("🧪 Додати тестові дані SOL"):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO indicators (timestamp, symbol, rsi) VALUES ('2025-08-12 13:00:00', 'SOL', 25)")
+    cursor.execute("INSERT INTO whales (timestamp, symbol, total_volume) VALUES ('2025-08-12 13:00:00', 'SOL', 500000)")
+    cursor.execute("INSERT INTO prices (timestamp, symbol, close) VALUES ('2025-08-12 13:00:00', 'SOL', 160)")
+    conn.commit()
+    conn.close()
+    st.success("✅ Тестові дані додано в базу!")
 
 try:
     df = get_combined_data(selected_symbol)
