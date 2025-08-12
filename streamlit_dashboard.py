@@ -19,12 +19,6 @@ CHAT_ID = "248171610"
 st.set_page_config(layout="wide")
 st.title("📊 Crypto SMC Dashboard")
 
-if "gcp_service_account" not in st.secrets:
-    st.error("❌ gcp_service_account не знайдено в secrets")
-else:
-    st.success("🔑 Ключ Google знайдено!")
-
-
 def get_combined_data(symbol):
     conn = sqlite3.connect(DB_PATH)
     rsi = pd.read_sql_query(f"SELECT timestamp, rsi FROM indicators WHERE symbol='{symbol}'", conn)
