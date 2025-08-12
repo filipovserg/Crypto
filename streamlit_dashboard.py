@@ -7,6 +7,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import requests  # 🔄 замість telegram
 import json
+from collections.abc import Mapping
 
 DB_PATH = "crypto_data.db"
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1E7ohaRHZfNvHHM9pFrQUW0W_T0ESTmoH6BL1SGG2Kds/edit"
@@ -32,8 +33,8 @@ def get_combined_data(symbol):
 # Google Sheets Access
 def get_signals():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_dict = st.secrets["gcp_service_account"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(json.dumps(creds_dict)), scope)
+    creds_dict = json.loads(json.dumps(dict(st.secrets["gcp_service_account"])))
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet(SHEET_NAME)
     data = sheet.get_all_records()
@@ -60,24 +61,31 @@ selected_symbol = st.sidebar.selectbox("Вибери монету", symbols)
 if st.sidebar.button("🔁 Ручний запуск перевірки"):
     send_test_telegram_message()
 
-df = get_combined_data(selected_symbol)
+try:
+    df = get_combined_data(selected_symbol)
+except Exception as e:
+    st.error(f"❌ Помилка підключення до бази: {e}")
+    df = pd.DataFrame()
 
 col1, col2 = st.columns([2, 1])
 with col1:
-    st.subheader(f"📈 RSI, Whale Volume і Price: {selected_symbol}")
-    fig, ax1 = plt.subplots(figsize=(12, 5))
-    ax1.plot(df["timestamp"], df["rsi"], label="RSI", color="blue")
-    ax1.axhline(30, linestyle="--", color="red", label="RSI=30")
-    ax1.axhline(70, linestyle="--", color="green", label="RSI=70")
-    ax2 = ax1.twinx()
-    ax2.bar(df["timestamp"], df["total_volume"], alpha=0.3, color="gray", label="Whale Vol")
-    ax1.set_ylabel("RSI")
-    ax2.set_ylabel("Whale Volume")
-    fig.tight_layout()
-    fig.legend(loc="upper left")
-    st.pyplot(fig)
+    if not df.empty:
+        st.subheader(f"📈 RSI, Whale Volume і Price: {selected_symbol}")
+        fig, ax1 = plt.subplots(figsize=(12, 5))
+        ax1.plot(df["timestamp"], df["rsi"], label="RSI", color="blue")
+        ax1.axhline(30, linestyle="--", color="red", label="RSI=30")
+        ax1.axhline(70, linestyle="--", color="green", label="RSI=70")
+        ax2 = ax1.twinx()
+        ax2.bar(df["timestamp"], df["total_volume"], alpha=0.3, color="gray", label="Whale Vol")
+        ax1.set_ylabel("RSI")
+        ax2.set_ylabel("Whale Volume")
+        fig.tight_layout()
+        fig.legend(loc="upper left")
+        st.pyplot(fig)
 
-    st.line_chart(df.set_index("timestamp")["close"], use_container_width=True, height=200)
+        st.line_chart(df.set_index("timestamp")["close"], use_container_width=True, height=200)
+    else:
+        st.info("📭 Немає даних для відображення")
 
 with col2:
     st.subheader("🧾 Останні SMC сигнали")
