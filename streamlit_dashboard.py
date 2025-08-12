@@ -18,6 +18,12 @@ CHAT_ID = "248171610"
 st.set_page_config(layout="wide")
 st.title("📊 Crypto SMC Dashboard")
 
+# DEBUG: перевірка наявності ключів
+if "gcp_service_account" not in st.secrets:
+    st.error("❌ gcp_service_account не знайдено в secrets")
+else:
+    st.success("🔑 Ключ Google знайдено!")
+
 # DB Access
 def get_combined_data(symbol):
     conn = sqlite3.connect(DB_PATH)
@@ -33,7 +39,8 @@ def get_combined_data(symbol):
 # Google Sheets Access
 def get_signals():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_dict = json.loads(json.dumps(dict(st.secrets["gcp_service_account"])))
+    creds_raw = st.secrets["gcp_service_account"]
+    creds_dict = json.loads(json.dumps({k: v for k, v in creds_raw.items()}))
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet(SHEET_NAME)
@@ -90,12 +97,6 @@ with col1:
 with col2:
     st.subheader("🧾 Останні SMC сигнали")
     try:
-      # DEBUG: перевірка наявності ключів
-        if "gcp_service_account" not in st.secrets:
-            st.error("❌ gcp_service_account не знайдено в secrets")
-        else:
-            st.success("🔑 Ключ Google знайдено!")
-  
         df_signals = get_signals()
         df_filtered = df_signals[df_signals["Symbol"] == selected_symbol]
         st.dataframe(df_filtered.tail(10), use_container_width=True)
