@@ -116,10 +116,6 @@ def check_smc_conditions(df):
 symbols = ["SOL", "ETH", "XRP", "BTC", "GRT", "RENDER", "ICP", "SUI", "APT", "INJ"]
 selected_symbol = st.sidebar.selectbox("Вибери монету", symbols)
 
-INSERT INTO indicators (timestamp, symbol, rsi) VALUES ('2025-08-12 13:00:00', 'SOL', 25);
-INSERT INTO whales (timestamp, symbol, total_volume) VALUES ('2025-08-12 13:00:00', 'SOL', 500000);
-INSERT INTO prices (timestamp, symbol, close) VALUES ('2025-08-12 13:00:00', 'SOL', 160);
-
 if st.sidebar.button("🔁 Ручний запуск перевірки"):
     df_check = get_combined_data(selected_symbol)
     signal = check_smc_conditions(df_check)
