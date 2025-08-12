@@ -19,6 +19,7 @@ CHAT_ID = "248171610"
 st.set_page_config(layout="wide")
 st.title("📊 Crypto SMC Dashboard")
 
+
 def get_combined_data(symbol):
     conn = sqlite3.connect(DB_PATH)
     rsi = pd.read_sql_query(f"SELECT timestamp, rsi FROM indicators WHERE symbol='{symbol}'", conn)
