@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-import telegram
-from telegram import Bot
+from telegram import Bot  # 🔄 виправлено імпорт
 
 DB_PATH = "crypto_data.db"
 SERVICE_ACCOUNT_FILE = "service_account.json"
@@ -41,7 +40,7 @@ def get_signals():
 
 # Telegram Log
 def send_test_telegram_message():
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    bot = Bot(token=TELEGRAM_TOKEN)
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     msg = f"🔔 Ручний запуск перевірки: {now}"
     bot.send_message(chat_id=CHAT_ID, text=msg)
@@ -80,4 +79,3 @@ with col2:
         st.dataframe(df_filtered.tail(10), use_container_width=True)
     except Exception as e:
         st.error(f"Помилка завантаження сигналів: {e}")
-
