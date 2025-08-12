@@ -21,10 +21,9 @@ st.title("📊 Crypto SMC Dashboard")
 
 if "gcp_service_account" not in st.secrets:
     st.error("❌ gcp_service_account не знайдено в secrets")
-    creds_dict = None
 else:
     st.success("🔑 Ключ Google знайдено!")
-    creds_dict = st.secrets["gcp_service_account"]
+
 
 def get_combined_data(symbol):
     conn = sqlite3.connect(DB_PATH)
@@ -37,6 +36,7 @@ def get_combined_data(symbol):
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     return df.sort_values("timestamp")
 
+
 def get_signals():
     creds_dict = st.secrets["gcp_service_account"]
     credentials = service_account.Credentials.from_service_account_info(creds_dict, scopes=[
@@ -47,6 +47,7 @@ def get_signals():
     sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet(SHEET_NAME)
     data = sheet.get_all_records()
     return pd.DataFrame(data)
+
 
 def append_signal_to_sheet(new_signal):
     creds_dict = st.secrets["gcp_service_account"]
@@ -60,6 +61,7 @@ def append_signal_to_sheet(new_signal):
     updated_df = pd.concat([df, pd.DataFrame([new_signal])], ignore_index=True)
     sheet.clear()
     set_with_dataframe(sheet, updated_df)
+
 
 def send_signal_to_telegram(signal):
     msg = f"📉 {signal['Symbol']} {signal['Direction']} {signal['Leverage']}\n\n"
@@ -76,38 +78,58 @@ def send_signal_to_telegram(signal):
     except Exception as e:
         return False
 
-def check_for_smc_conditions(df, symbol):
-    if df.empty:
+
+def check_smc_conditions(df):
+    if len(df) < 20:
         return None
+
     latest = df.iloc[-1]
-    if latest['rsi'] < 30 and latest['total_volume'] > df['total_volume'].rolling(20).mean().iloc[-1] * 1.5:
-        return {
+    rsi = latest["rsi"]
+    volume = latest["total_volume"]
+    price = latest["close"]
+    avg_volume = df["total_volume"].tail(20).mean()
+
+    rsi_cond = rsi < 30 or rsi > 70
+    volume_cond = volume > avg_volume * 1.5
+    recent_lows = df["close"].tail(20).min()
+    recent_highs = df["close"].tail(20).max()
+    support_break = price < recent_lows * 0.995
+    resistance_break = price > recent_highs * 1.005
+
+    if rsi_cond and volume_cond and (support_break or resistance_break):
+        direction = "Short" if rsi > 70 else "Long"
+        atr = df["close"].tail(14).std() * 1.5
+        tp = f"{price + (-1 if direction == 'Short' else 1) * atr:.3f}"
+        sl = f"{price - (-1 if direction == 'Short' else 1) * atr:.3f}"
+        signal = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Symbol": symbol,
-            "Direction": "Long",
-            "Leverage": "20x",
-            "Entry Zone": f"{latest['close'] * 0.98:.3f} - {latest['close']:.3f}",
-            "Take Profit": f"{latest['close'] * 1.01:.3f}, {latest['close'] * 1.03:.3f}, {latest['close'] * 1.05:.3f}",
-            "Stop Loss": f"{latest['close'] * 0.965:.3f}",
-            "HTF Context": "RSI + Whale Spike",
-            "LTF Confirmation": "Auto Signal",
-            "Liquidity Target": "Mean Reversion",
-            "Notes": "Автоматичний сигнал: RSI < 30 та spike по whale volume"
+            "Symbol": selected_symbol,
+            "Direction": direction,
+            "Leverage": "25x",
+            "Entry Zone": f"{price:.3f}",
+            "Take Profit": tp,
+            "Stop Loss": sl,
+            "HTF Context": "RSI + Whale Vol + Breakout",
+            "LTF Confirmation": "",
+            "Liquidity Target": "",
+            "Notes": f"Автоформований SMC сигнал. RSI: {rsi:.1f}, Whale vol: {volume:.0f}, Ціна: {price:.3f}"
         }
+        return signal
     return None
+
 
 symbols = ["SOL", "ETH", "XRP", "RNDR"]
 selected_symbol = st.sidebar.selectbox("Вибери монету", symbols)
-st.write("Private key snippet:", creds_dict["private_key"][:30])
+
 if st.sidebar.button("🔁 Ручний запуск перевірки"):
-    df = get_combined_data(selected_symbol)
-    auto_signal = check_for_smc_conditions(df, selected_symbol)
-    if auto_signal:
-        append_signal_to_sheet(auto_signal)
-        if send_signal_to_telegram(auto_signal):
-            st.success("📬 Авто-сигнал надіслано в Telegram і додано до таблиці!")
+    df_check = get_combined_data(selected_symbol)
+    signal = check_smc_conditions(df_check)
+    if signal:
+        append_signal_to_sheet(signal)
+        if send_signal_to_telegram(signal):
+            st.success("📬 Сигнал сформовано, надіслано в Telegram і додано до таблиці!")
         else:
-            st.error("❌ Не вдалося надіслати авто-сигнал у Telegram")
+            st.warning("⚠️ Сигнал збережено, але Telegram не спрацював")
     else:
         st.info("ℹ️ Умови SMC не виконані — сигнал не сформовано")
 
