@@ -21,8 +21,10 @@ st.title("📊 Crypto SMC Dashboard")
 
 if "gcp_service_account" not in st.secrets:
     st.error("❌ gcp_service_account не знайдено в secrets")
+    creds_dict = None
 else:
     st.success("🔑 Ключ Google знайдено!")
+    creds_dict = st.secrets["gcp_service_account"]
 
 def get_combined_data(symbol):
     conn = sqlite3.connect(DB_PATH)
