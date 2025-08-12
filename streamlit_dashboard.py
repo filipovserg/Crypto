@@ -6,6 +6,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import telegram
+from telegram import Bot
 
 DB_PATH = "crypto_data.db"
 SERVICE_ACCOUNT_FILE = "service_account.json"
