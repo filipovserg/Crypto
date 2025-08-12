@@ -2,12 +2,13 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import matplotlib.pyplot as plt
+from google.oauth2 import service_account  # ✅ нова бібліотека
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from gspread_dataframe import get_as_dataframe
+from google.auth.transport.requests import Request
 from datetime import datetime
-import requests  # 🔄 замість telegram
+import requests
 import json
-from collections.abc import Mapping
 
 DB_PATH = "crypto_data.db"
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1E7ohaRHZfNvHHM9pFrQUW0W_T0ESTmoH6BL1SGG2Kds/edit"
@@ -38,22 +39,15 @@ def get_combined_data(symbol):
 
 # Google Sheets Access
 def get_signals():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_raw = st.secrets["gcp_service_account"]
-
-    # 🛠️ Розкодувати \n у справжні переводи рядків
-    if "\\n" in creds_raw["private_key"]:
-        creds_raw["private_key"] = creds_raw["private_key"].replace("\\n", "\n")
-
-    creds_dict = json.loads(json.dumps({k: v for k, v in creds_raw.items()}))
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-
-    client = gspread.authorize(creds)
+    creds_dict = st.secrets["gcp_service_account"]
+    credentials = service_account.Credentials.from_service_account_info(creds_dict, scopes=[
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ])
+    client = gspread.authorize(credentials)
     sheet = client.open_by_url(GOOGLE_SHEET_URL).worksheet(SHEET_NAME)
     data = sheet.get_all_records()
     return pd.DataFrame(data)
-
-
 
 # Telegram Log via requests
 def send_test_telegram_message():
