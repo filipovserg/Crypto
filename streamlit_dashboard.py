@@ -90,6 +90,12 @@ with col1:
 with col2:
     st.subheader("🧾 Останні SMC сигнали")
     try:
+      # DEBUG: перевірка наявності ключів
+        if "gcp_service_account" not in st.secrets:
+            st.error("❌ gcp_service_account не знайдено в secrets")
+        else:
+            st.success("🔑 Ключ Google знайдено!")
+  
         df_signals = get_signals()
         df_filtered = df_signals[df_signals["Symbol"] == selected_symbol]
         st.dataframe(df_filtered.tail(10), use_container_width=True)
